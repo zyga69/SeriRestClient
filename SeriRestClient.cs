@@ -1,13 +1,13 @@
 ﻿using Newtonsoft.Json;
 using RestSharp;
-using Serilog;
-using Serilog.Core;
+using System.IO;
 using System.Net;
 using System.Net.Mime;
 using System.Text;
 using System.Xml;
 using System.Xml.Linq;
 using System.Xml.Serialization;
+using ILogger = Serilog.ILogger;
 
 namespace SeriRest
 {

@@ -1,11 +1,6 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using RestSharp;
-using Serilog;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using ILogger = Serilog.ILogger;
 
 namespace SeriRest
 {
@@ -16,7 +11,7 @@ namespace SeriRest
                Func<IServiceProvider, object?, RestClientOptions> implementationFactory)
         {
             return services
-                .AddKeyedSingleton< RestClientOptions>(key, implementationFactory)
+                .AddKeyedSingleton<RestClientOptions>(key, implementationFactory)
                 .AddKeyedScoped(key, (sp, serviceKey) =>
 
                     new SeriRestClient(
