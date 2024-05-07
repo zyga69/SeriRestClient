@@ -30,7 +30,7 @@ namespace SeriRest
 
         public RestResponse<TResponse> LogRequest<TResponse>(RestRequest request, Method method)
         {
-            logger.Debug($"[REST] REQUEST  [{method}][{request.Resource}]");
+            logger.Debug($"[REST] REQUEST  [{method}][{ Options.BaseUrl}/{request.Resource}]");
 
             foreach (Parameter parameter in request.Parameters)
             {
