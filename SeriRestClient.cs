@@ -30,7 +30,7 @@ namespace SeriRest
 
         public RestResponse<TResponse> LogRequest<TResponse>(RestRequest request, Method method)
         {
-            logger.Debug($"[REST] REQUEST  [{method}][{ Options.BaseUrl}/{request.Resource}]");
+            logger.Debug($"[REST] REQUEST  [{method}][{Options.BaseUrl}/{request.Resource}]");
 
             foreach (Parameter parameter in request.Parameters)
             {
@@ -46,7 +46,9 @@ namespace SeriRest
 
             LogCookies(request.CookieContainer?.GetAllCookies());
 
+            var requestStart = DateTime.UtcNow;
             var response = this.Execute<TResponse>(request, method);
+            var requestTime = DateTime.UtcNow - requestStart;
 
             if (response.IsSuccessful)
             {
@@ -64,6 +66,7 @@ namespace SeriRest
             LogCookies(response.Cookies);
             LogResponseBody(response.Content, response.ContentType);
 
+            logger.Debug($"[REST] REQUEST -> RESPONSE: {requestTime}");
             return response;
         }
 
