@@ -12,7 +12,7 @@ namespace SeriRest
         {
             return services
                 .AddKeyedSingleton<RestClientOptions>(key, implementationFactory)
-                .AddKeyedTransient(key, (sp, serviceKey) =>
+                .AddKeyedScoped(key, (sp, serviceKey) =>
 
                     new SeriRestClient(
                         sp.GetRequiredKeyedService<RestClientOptions>(key),
