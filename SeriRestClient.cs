@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using NetDaemonApps.Lib.HikIsapiClient.HikIsapiClient.ExtensionMethods;
+using Newtonsoft.Json;
 using RestSharp;
 using System.IO;
 using System.Net;
@@ -25,12 +26,12 @@ namespace SeriRest
 
         public SeriRestClient(RestClientOptions options, ILogger logger) : base(options)
         {
-            this.logger = logger;
+            this.logger = logger.ForContext($"REST: {options.BaseUrl}");
         }
 
         public RestResponse<TResponse> LogRequest<TResponse>(RestRequest request, Method method)
         {
-            logger.Debug($"[REST] REQUEST  [{method}][{Options.BaseUrl}/{request.Resource}]");
+            logger.Debug($"REQUEST  [{method}][{Options.BaseUrl}/{request.Resource}]");
 
             foreach (Parameter parameter in request.Parameters)
             {
@@ -40,7 +41,7 @@ namespace SeriRest
                 }
                 else
                 {
-                    logger.Debug($"[REST]  [{parameter.Type}]->[{parameter.Name}]: [{parameter.Value}]");
+                    logger.Debug($" [{parameter.Type}]->[{parameter.Name}]: [{parameter.Value}]");
                 }
             }
 
@@ -52,21 +53,21 @@ namespace SeriRest
 
             if (response.IsSuccessful)
             {
-                logger.Debug($"[REST] RESPONSE [{response.StatusCode}]");
+                logger.Debug($"RESPONSE [{response.StatusCode}]");
             }
             else if (response.IsSuccessStatusCode)
             {
-                logger.Warning($"[REST] RESPONSE [{response.StatusCode}]: [{response.ErrorMessage}]");
+                logger.Warning($"RESPONSE [{response.StatusCode}]: [{response.ErrorMessage}]");
             }
             else
             {
-                logger.Error($"[REST] RESPONSE [{response.StatusCode}]: [{response.ErrorMessage}]");
+                logger.Error($"RESPONSE [{response.StatusCode}]: [{response.ErrorMessage}]");
             }
 
             LogCookies(response.Cookies);
             LogResponseBody(response.Content, response.ContentType);
 
-            logger.Debug($"[REST] REQUEST -> RESPONSE: {requestTime}");
+            logger.Debug($"REQUEST -> RESPONSE: {requestTime}");
             return response;
         }
 
@@ -88,7 +89,7 @@ namespace SeriRest
                 default: formatted = content; break;
             }
 
-            logger.Debug($"[REST]  [Payload]: {formatted}");
+            logger.Debug($" [Payload]: {formatted}");
         }
 
         private void LogRequestBody(object? data, DataFormat format)
@@ -110,7 +111,7 @@ namespace SeriRest
                     formatted = data.ToString() ?? string.Empty; break;
             }
 
-            logger.Debug($"[REST]  [Payload]: {formatted}");
+            logger.Debug($" [Payload]: {formatted}");
         }
 
         private void LogCookies(CookieCollection? collection)
@@ -119,7 +120,7 @@ namespace SeriRest
             {
                 foreach (Cookie cookie in collection)
                 {
-                    logger.Debug($"[REST]  [Cookie]->[{cookie.Name}]: [{cookie.Value}]");
+                    logger.Debug($" [Cookie]->[{cookie.Name}]: [{cookie.Value}]");
                 }
             }
         }
