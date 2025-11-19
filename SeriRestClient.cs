@@ -127,8 +127,6 @@ namespace SeriRest
 
         private static string GetXml(object? data)
         {
-            ArgumentNullException.ThrowIfNull(data);
-
             XmlSerializer xsSubmit = new XmlSerializer(data.GetType());
 
             using (var sww = new StringWriter())
@@ -164,10 +162,9 @@ namespace SeriRest
 
         private static string PrettyJson(string? json)
         {
-            if (string.IsNullOrWhiteSpace(json)) 
-                return string.Empty;
+            if (string.IsNullOrWhiteSpace(json)) return string.Empty;
 
-            dynamic? parsedJson = JsonConvert.DeserializeObject(json);
+            dynamic parsedJson = JsonConvert.DeserializeObject(json);
             return JsonConvert.SerializeObject(parsedJson, Newtonsoft.Json.Formatting.Indented);
         }
     }
