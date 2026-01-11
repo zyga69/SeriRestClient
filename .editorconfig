@@ -1,0 +1,40 @@
+root = true
+
+[*]
+charset = utf-8
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+[*.{cs,csx,vb,vbx}]
+indent_size = 4
+indent_style = space
+
+[*.cs]
+# Nullable reference types
+csharp_nullable_reference_types = true
+
+# Use file scoped namespaces
+csharp_style_namespace_declarations = file_scoped:suggestion
+
+# Prefer modern language features
+csharp_prefer_simple_using_statement = true:suggestion
+csharp_style_pattern_matching_over_as_with_null_check = true:suggestion
+csharp_style_pattern_matching_over_is_with_cast_check = true:suggestion
+csharp_style_prefer_not_pattern = true:suggestion
+csharp_style_prefer_extended_property_pattern = true:suggestion
+
+# Code style defaults
+dotnet_sort_system_directives_first = true
+csharp_new_line_before_open_brace = all
+csharp_new_line_before_else = true
+csharp_new_line_before_catch = true
+csharp_new_line_before_finally = true
+
+[*.{yml,yaml}]
+indent_size = 2
+
+[*.{json,xml}]
+indent_size = 2
+
+[*.md]
+trim_trailing_whitespace = false

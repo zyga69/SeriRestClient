@@ -1,0 +1,78 @@
+kind: pipeline
+type: docker
+name: build
+
+clone:
+  depth: 0
+
+steps:
+  - name: build-and-test
+    image: mcr.microsoft.com/dotnet/sdk:10.0
+    commands:
+      - apt-get update && apt-get install -y git
+      - dotnet restore
+      - dotnet build --no-restore -c Release
+      - echo "Package version will be:"
+      - dotnet nbgv get-version -p . -f json
+      - dotnet test --no-build -c Release --logger "trx;LogFileName=test-results.trx"
+
+trigger:
+  event:
+    - push
+  branch:
+    exclude:
+    - master
+    - main
+
+---
+kind: pipeline
+type: docker
+name: publish-nuget
+
+clone:
+  depth: 0
+
+steps:
+  - name: restore-and-build
+    image: mcr.microsoft.com/dotnet/sdk:10.0
+    commands:
+      - apt-get update && apt-get install -y git
+      - dotnet restore SeriRestClient.csproj
+      - dotnet build SeriRestClient.csproj -c Release --no-restore
+      - echo "Building package version:"
+      - dotnet nbgv get-version -p . -f json
+
+  - name: run-tests
+    image: mcr.microsoft.com/dotnet/sdk:10.0
+    commands:
+      - dotnet test --no-build -c Release --logger "trx;LogFileName=test-results.trx"
+    depends_on:
+      - restore-and-build
+
+  - name: pack-nuget
+    image: mcr.microsoft.com/dotnet/sdk:10.0
+    commands:
+      - dotnet pack SeriRestClient.csproj -c Release -o ./nupkgs --no-build
+      - echo "Created package:"
+      - ls -lah ./nupkgs/
+    depends_on:
+      - run-tests
+
+  - name: publish-nuget
+    image: mcr.microsoft.com/dotnet/sdk:10.0
+    environment:
+      BAGET_URL:
+        from_secret: BAGET_URL
+    commands:
+      - dotnet nuget add source "$BAGET_URL" -n Baget2 --allow-insecure-connections
+      - dotnet nuget push ./nupkgs/*.nupkg -s Baget2 --skip-duplicate
+    depends_on:
+      - pack-nuget
+
+trigger:
+  branch:
+    - master
+    - main
+  event:
+    - push
+    - custom
