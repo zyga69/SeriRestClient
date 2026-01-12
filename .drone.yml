@@ -68,6 +68,7 @@ steps:
       BAGET_URL:
         from_secret: BAGET_URL
     commands:
+      - dotnet nuget remove source Baget2 || true
       - dotnet nuget add source "$BAGET_URL" -n Baget2 --allow-insecure-connections
       - dotnet nuget push ./nupkgs/*.nupkg -s Baget2 --skip-duplicate
     depends_on:
