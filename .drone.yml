@@ -10,6 +10,8 @@ steps:
     image: mcr.microsoft.com/dotnet/sdk:10.0
     commands:
       - apt-get update && apt-get install -y git
+      - dotnet tool install -g nbgv
+      - export PATH="$PATH:$HOME/.dotnet/tools"
       - dotnet restore
       - dotnet build --no-restore -c Release
       - echo "Package version will be:"
@@ -37,6 +39,8 @@ steps:
     image: mcr.microsoft.com/dotnet/sdk:10.0
     commands:
       - apt-get update && apt-get install -y git
+      - dotnet tool install -g nbgv
+      - export PATH="$PATH:$HOME/.dotnet/tools"
       - dotnet restore SeriRestClient.csproj
       - dotnet build SeriRestClient.csproj -c Release --no-restore
       - echo "Building package version:"
