@@ -56,7 +56,7 @@ steps:
   - name: pack-nuget
     image: mcr.microsoft.com/dotnet/sdk:10.0
     commands:
-      - dotnet pack SeriRestClient.csproj -c Release -o ./nupkgs --no-build
+      - dotnet pack SeriRestClient.csproj -c Release -o ./nupkgs
       - echo "Created package:"
       - ls -lah ./nupkgs/
     depends_on:
