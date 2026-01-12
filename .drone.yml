@@ -16,7 +16,7 @@ steps:
       - dotnet build --no-restore -c Release
       - echo "Package version will be:"
       - nbgv get-version -p . -f json
-      - dotnet test --no-build -c Release --logger "trx;LogFileName=test-results.trx"
+      - dotnet test -c Release --logger "trx;LogFileName=test-results.trx"
 
 trigger:
   event:
@@ -49,7 +49,7 @@ steps:
   - name: run-tests
     image: mcr.microsoft.com/dotnet/sdk:10.0
     commands:
-      - dotnet test --no-build -c Release --logger "trx;LogFileName=test-results.trx"
+      - dotnet test -c Release --logger "trx;LogFileName=test-results.trx"
     depends_on:
       - restore-and-build
 
