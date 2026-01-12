@@ -15,7 +15,7 @@ steps:
       - dotnet restore
       - dotnet build --no-restore -c Release
       - echo "Package version will be:"
-      - dotnet nbgv get-version -p . -f json
+      - nbgv get-version -p . -f json
       - dotnet test --no-build -c Release --logger "trx;LogFileName=test-results.trx"
 
 trigger:
@@ -44,7 +44,7 @@ steps:
       - dotnet restore SeriRestClient.csproj
       - dotnet build SeriRestClient.csproj -c Release --no-restore
       - echo "Building package version:"
-      - dotnet nbgv get-version -p . -f json
+      - nbgv get-version -p . -f json
 
   - name: run-tests
     image: mcr.microsoft.com/dotnet/sdk:10.0
