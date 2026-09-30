@@ -1,12 +1,12 @@
 using RestSharp;
 
-namespace SeriRestClient;
+namespace Zyga.SeriRestClient;
 
 /// <summary>
 /// Defines a REST client with integrated Serilog logging capabilities.
 /// Provides logging for both HTTP requests and responses including headers, body, and cookies.
 /// </summary>
-public interface ISeriRestClient
+public interface ILoggingRestClient
 {
     /// <summary>
     /// Executes an HTTP request with comprehensive Serilog logging.
@@ -18,15 +18,16 @@ public interface ISeriRestClient
     /// <param name="method">The HTTP method to use (GET, POST, PUT, DELETE, etc.).</param>
     /// <returns>A <see cref="RestResponse{TResponse}"/> containing the deserialized response data and metadata.</returns>
     /// <remarks>
-    /// All logging is performed at the Information level. Request and response bodies are formatted
-    /// for readability (JSON is pretty-printed, XML is indented). Sensitive data in cookies and headers
-    /// will be logged - ensure proper log filtering if needed.
+    /// Request and response detail is logged at Debug. A completed call whose response is
+    /// unsuccessful logs at Warning; a call that failed outright logs at Error. Bodies are
+    /// formatted for readability. Cookies and header values are logged verbatim — apply log
+    /// filtering if that matters for your deployment.
     /// </remarks>
     /// <example>
     /// <code>
     /// var request = new RestRequest("api/users/{id}");
     /// request.AddUrlSegment("id", 123);
-    /// var response = await client.LogRequest&lt;User&gt;(request, Method.Get);
+    /// var response = client.LogRequest&lt;User&gt;(request, Method.Get);
     /// </code>
     /// </example>
     RestResponse<TResponse> LogRequest<TResponse>(RestRequest request, Method method);

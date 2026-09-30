@@ -2,15 +2,15 @@
 using RestSharp;
 using ILogger = Serilog.ILogger;
 
-namespace SeriRestClient;
+namespace Zyga.SeriRestClient;
 
 /// <summary>
-/// Provides extension methods for registering SeriRestClient in an <see cref="IServiceCollection"/>.
+/// Provides extension methods for registering LoggingRestClient in an <see cref="IServiceCollection"/>.
 /// </summary>
-public static class IServiceCollectionExtensions
+public static class ServiceCollectionExtensions
 {
     /// <summary>
-    /// Registers <see cref="ISeriRestClient"/> and <see cref="SeriRestClient"/> as keyed services
+    /// Registers <see cref="ILoggingRestClient"/> and <see cref="LoggingRestClient"/> as keyed services
     /// in the dependency injection container.
     /// </summary>
     /// <param name="services">The <see cref="IServiceCollection"/> to add services to.</param>
@@ -35,7 +35,7 @@ public static class IServiceCollectionExtensions
     /// );
     ///
     /// // Then inject with:
-    /// // [FromKeyedServices("MyApi")] ISeriRestClient client
+    /// // [FromKeyedServices("MyApi")] ILoggingRestClient client
     /// </code>
     /// </example>
     public static IServiceCollection AddSeriRestClient(this IServiceCollection services,
@@ -44,15 +44,15 @@ public static class IServiceCollectionExtensions
     {
         return services
             .AddKeyedSingleton<RestClientOptions>(key, implementationFactory)
-            .AddKeyedScoped<ISeriRestClient>(key, (sp, serviceKey) =>
+            .AddKeyedScoped<ILoggingRestClient>(key, (sp, serviceKey) =>
 
-                new SeriRestClient(
+                new LoggingRestClient(
                     sp.GetRequiredKeyedService<RestClientOptions>(key),
                     sp.GetRequiredService<ILogger>())
             )
             .AddKeyedScoped(key, (sp, serviceKey) =>
 
-                new SeriRestClient(
+                new LoggingRestClient(
                     sp.GetRequiredKeyedService<RestClientOptions>(key),
                     sp.GetRequiredService<ILogger>())
             );

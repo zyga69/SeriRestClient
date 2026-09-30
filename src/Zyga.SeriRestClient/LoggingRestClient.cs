@@ -8,7 +8,7 @@ using System.Xml.Linq;
 using System.Xml.Serialization;
 using ILogger = Serilog.ILogger;
 
-namespace SeriRestClient;
+namespace Zyga.SeriRestClient;
 
 /// <summary>
 /// A REST client that wraps RestSharp with integrated Serilog logging capabilities.
@@ -20,7 +20,7 @@ namespace SeriRestClient;
 /// Debug level for requests/responses, with Warning level for non-success status codes,
 /// and Error level for failed requests.
 /// </remarks>
-public class SeriRestClient : RestClient, ISeriRestClient
+public class LoggingRestClient : RestClient, ILoggingRestClient
 {
     private readonly ILogger logger;
 
@@ -33,7 +33,7 @@ public class SeriRestClient : RestClient, ISeriRestClient
     };
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="SeriRestClient"/> class.
+    /// Initializes a new instance of the <see cref="LoggingRestClient"/> class.
     /// </summary>
     /// <param name="options">Configuration options for the REST client, including base URL and default headers.</param>
     /// <param name="logger">The Serilog logger instance used for logging HTTP traffic.</param>
@@ -41,7 +41,7 @@ public class SeriRestClient : RestClient, ISeriRestClient
     /// The logger context is enriched with the base URL from the options to help identify
     /// which REST endpoint logs are associated with.
     /// </remarks>
-    public SeriRestClient(RestClientOptions options, ILogger logger) : base(options)
+    public LoggingRestClient(RestClientOptions options, ILogger logger) : base(options)
     {
         this.logger = logger.ForContext("SourceContext", $"REST: {options.BaseUrl}");
     }
