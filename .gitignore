@@ -38,3 +38,6 @@ TestResults/
 
 # Rider
 .idea/
+
+# Design specs and reviews (contain the pre-rewrite work email; must never be committed)
+docs/
