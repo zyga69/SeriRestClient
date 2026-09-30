@@ -1,0 +1,113 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build & test (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    permissions:
+      contents: read
+      checks: write          # test reporter writes a check run
+      pull-requests: write   # coverage comment
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0     # MinVer needs full history and tags
+
+      # Cache on Directory.Packages.props: under central package management it is the
+      # sole declaration site for every version, so it changes exactly when
+      # dependencies change. Do NOT key on '**/packages.lock.json' unless the repo
+      # actually generates lock files — a cache-dependency-path matching zero files is
+      # a silently dead cache. (Lock files are not worth adding just for this: plain
+      # `dotnet restore` rewrites an out-of-date lock instead of enforcing it, so they
+      # buy no reproducibility without --locked-mode.)
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            8.0.x
+            9.0.x
+            10.0.x
+          cache: true
+          cache-dependency-path: '**/Directory.Packages.props'
+
+      - name: Restore
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --no-restore -c Release
+
+      # Microsoft.Testing.Platform flags. The VSTest spellings
+      # (--logger "trx;..." / --collect:"XPlat Code Coverage" / --results-directory)
+      # do nothing here.
+      - name: Test
+        run: >
+          dotnet test --no-build -c Release
+          -- --report-trx --coverage --coverage-output-format cobertura
+
+      # if: always() so results still publish when tests fail — that is
+      # exactly when the report is most useful.
+      #
+      # path must match what MTP actually writes, which is named after the assembly,
+      # framework and architecture (e.g. Acme.Tests_net10.0_x64.trx) — NOT a fixed
+      # test-results.trx. A glob that matches nothing FAILS the job: fail-on-empty is a
+      # separate input from fail-on-error, is required:true and defaults to 'true'.
+      # fail-on-error governs failed tests only.
+      #
+      # Do not force a fixed filename producer-side with --report-trx-filename: with
+      # several target frameworks sharing one TestResults/, a fixed name is overwritten
+      # rather than merged, and you silently report one framework's results.
+      - name: Publish test results
+        uses: dorny/test-reporter@v1
+        if: always() && matrix.os == 'ubuntu-latest'
+        with:
+          name: Test results
+          path: 'TestResults/*.trx'
+          reporter: dotnet-trx
+          fail-on-error: false
+
+      # Name the file explicitly. MTP writes <guid>.cobertura.xml, which matches none of
+      # codecov-cli's include patterns — '*coverage*.*' needs the literal string
+      # "coverage", and 'cobertura.xml' is anchored. With fail_ci_if_error: false the
+      # miss is silent, so the badge simply never populates.
+      - name: Upload coverage
+        if: matrix.os == 'ubuntu-latest'
+        uses: codecov/codecov-action@v5
+        with:
+          files: ./TestResults/*.cobertura.xml
+          fail_ci_if_error: false
+
+  pack:
+    name: Verify packaging
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      # Proves the package builds cleanly on every PR, so packaging problems
+      # surface here rather than at release time.
+      - name: Pack
+        run: dotnet pack -c Release -o artifacts
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nupkg-preview
+          path: artifacts/*
+          retention-days: 7
