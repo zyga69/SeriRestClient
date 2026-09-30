@@ -1,8 +1,58 @@
 <Project>
-    <ItemGroup>
-        <PackageReference Include="Nerdbank.GitVersioning" Version="3.9.50" PrivateAssets="all">
-            <PrivateAssets>all</PrivateAssets>
-            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-        </PackageReference>
-    </ItemGroup>
+
+  <!-- Shared authoring metadata: applies to every project in the repo. -->
+  <PropertyGroup>
+    <Authors>Szymon Zywert</Authors>
+    <Copyright>Copyright (c) Szymon Zywert $([System.DateTime]::Now.Year)</Copyright>
+    <PackageProjectUrl>https://github.com/zyga69/SeriRestClient</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/zyga69/SeriRestClient</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+  </PropertyGroup>
+
+  <!-- Language and quality gates. -->
+  <PropertyGroup>
+    <TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+
+  <!--
+    SourceLink, symbols and deterministic output.
+    Together these let a consumer step into library source from their debugger,
+    which is most of what separates a package that feels trustworthy from one
+    that feels like a black box.
+  -->
+  <PropertyGroup>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <Deterministic>true</Deterministic>
+  </PropertyGroup>
+
+  <!--
+    CI only. ContinuousIntegrationBuild normalizes source paths for reproducible
+    builds, which breaks local debugging if set unconditionally.
+  -->
+  <PropertyGroup Condition="'$(CI)' == 'true' or '$(GITHUB_ACTIONS)' == 'true'">
+    <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+  </PropertyGroup>
+
+  <!-- MinVer: version comes from git tags, so no <Version> anywhere in the repo. -->
+  <PropertyGroup>
+    <MinVerTagPrefix>v</MinVerTagPrefix>
+  </PropertyGroup>
+
+  <!-- Pack the repo README into every packable project. -->
+  <ItemGroup Condition="'$(IsPackable)' == 'true'">
+    <None Include="$(MSBuildThisFileDirectory)README.md"
+          Pack="true" PackagePath="/" Visible="false" />
+  </ItemGroup>
+
 </Project>
