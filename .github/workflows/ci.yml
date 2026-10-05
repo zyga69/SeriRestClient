@@ -34,7 +34,7 @@ jobs:
       # a silently dead cache. (Lock files are not worth adding just for this: plain
       # `dotnet restore` rewrites an out-of-date lock instead of enforcing it, so they
       # buy no reproducibility without --locked-mode.)
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/setup-dotnet@v6
         with:
           dotnet-version: |
             8.0.x
@@ -97,7 +97,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/setup-dotnet@v6
         with:
           dotnet-version: 10.0.x
 
