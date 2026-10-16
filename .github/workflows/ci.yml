@@ -70,7 +70,7 @@ jobs:
       # several target frameworks sharing one TestResults/, a fixed name is overwritten
       # rather than merged, and you silently report one framework's results.
       - name: Publish test results
-        uses: dorny/test-reporter@v1
+        uses: dorny/test-reporter@v3
         if: always() && matrix.os == 'ubuntu-latest'
         with:
           name: Test results
