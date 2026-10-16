@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <PackageId>Zyga.SeriRestClient.Spectre</PackageId>
+    <RootNamespace>Zyga.SeriRestClient.Spectre</RootNamespace>
+    <Description>Spectre.Console-based pretty JSON formatter for Zyga.SeriRestClient logs</Description>
+    <PackageTags>rest;http;client;serilog;logging;restsharp;spectre;console</PackageTags>
+    <IsPackable>true</IsPackable>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="MinVer" PrivateAssets="all" />
+    <PackageReference Include="Serilog" />
+    <PackageReference Include="Spectre.Console.Json" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../Zyga.SeriRestClient/Zyga.SeriRestClient.csproj" />
+  </ItemGroup>
+
+</Project>
