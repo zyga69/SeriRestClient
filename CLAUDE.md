@@ -11,8 +11,16 @@ See `README.md` for the consumer-facing API and usage examples.
 ## Layout
 
 - `src/Zyga.SeriRestClient/` — the library: `LoggingRestClient.cs`, `ILoggingRestClient.cs`,
-  `ServiceCollectionExtensions.cs`, `Zyga.SeriRestClient.csproj`.
-- `test/Zyga.SeriRestClient.Tests/` — the test suite, referencing the library via `ProjectReference`.
+  `ServiceCollectionExtensions.cs`, `ISeriRestClientBuilder.cs`, `SeriRestClientBuilder.cs`,
+  `SeriRestClientBuilderExtensions.cs`, `PayloadFormat.cs`, `LoggingPropertyNames.cs`,
+  `Zyga.SeriRestClient.csproj`.
+- `src/Zyga.SeriRestClient.Spectre/` — an optional companion package: a Serilog `ITextFormatter`
+  (`RestClientSpectreFormatter.cs`) that syntax-highlights JSON payloads logged by
+  `LoggingRestClient` using Spectre.Console. References `Zyga.SeriRestClient` only to read the
+  `Payload`/`PayloadFormat` contract described under Logging behavior below.
+- `test/Zyga.SeriRestClient.Tests/` — the test suite for the core library, referencing it via
+  `ProjectReference`.
+- `test/Zyga.SeriRestClient.Spectre.Tests/` — the test suite for the Spectre formatter package.
 - `Directory.Build.props` — shared authoring metadata, target frameworks, SourceLink, and the
   `MinVerTagPrefix` setting, applied to every project in the repo.
 - `Directory.Packages.props` — central package management; every package version is declared here,
@@ -25,7 +33,7 @@ See `README.md` for the consumer-facing API and usage examples.
 ```bash
 dotnet build -c Release                                    # builds all three target frameworks
 dotnet test -c Release -f net10.0                          # runs the suite (see gotcha below)
-dotnet pack -c Release -o ./nupkgs                          # produces .nupkg + .snupkg for both projects
+dotnet pack -c Release -o ./nupkgs                          # produces .nupkg + .snupkg for both packable projects
 ```
 
 Run a single test: `dotnet test -c Release -f net10.0 -- --filter-method "*MyTestName*"` (MTP's filter
@@ -54,13 +62,25 @@ surface (`ExecuteAsync`, etc.). Keep both injection paths working when changing 
 unchanged even though the type it lived on was renamed) is what enables multiple independently-configured
 clients in one app:
 
-- `RestClientOptions` → keyed **singleton**, built by the caller's factory.
+- `RestClientOptions` → keyed **singleton**, built lazily on first resolution from a queue of
+  configuration actions accumulated on a fluent builder.
 - `ILoggingRestClient` → keyed **scoped**.
 - `LoggingRestClient` (concrete) → keyed **scoped**, registered *separately*.
 
 Because the interface and the concrete type are two registrations with two factories, resolving both
 under the same key in one scope produces **two distinct client instances**. Anything that must be
 shared per scope (cookie containers, connection state) will not be shared across them.
+
+**`AddSeriRestClient(key)` returns an `ISeriRestClientBuilder`, not a built `RestClientOptions`.**
+There is no caller-supplied factory anymore. `SeriRestClientBuilder` (internal) just accumulates a
+list of `Action<IServiceProvider, object?, RestClientOptions>` delegates; `WithBaseUrl`,
+`WithTimeout`, and the catch-all `Configure` (all extension methods on `ISeriRestClientBuilder`, in
+`SeriRestClientBuilderExtensions.cs`) each append one. Nothing runs at registration time — the
+keyed-singleton factory for `RestClientOptions` calls `SeriRestClientBuilder.Build(sp, key)`, which
+runs every queued action against a fresh `RestClientOptions` only when that singleton is first
+resolved. A corollary: calling `WithBaseUrl` is not enforced by the compiler or at registration time
+(see the gotcha already called out in `ServiceCollectionExtensions.AddSeriRestClient`'s XML doc) —
+skip it and the client resolves fine with a null `BaseUrl`.
 
 The extension also requires a **non-keyed `Serilog.ILogger`** in the container
 (`sp.GetRequiredService<ILogger>()`), so `UseSerilog(...)` or an equivalent registration is a
@@ -83,6 +103,15 @@ precondition for resolution to succeed.
   (`application/vnd.api+json`) falls through to the unformatted default.
 - `LogRequest<T>` is **synchronous** (it calls `Execute<T>`, not `ExecuteAsync`).
 - Everything is logged verbatim, including cookies and header values. There is no redaction.
+- Each pretty-printed body is logged as a real Serilog structured property, not just interpolated
+  into the message text: `logger.ForContext(LoggingPropertyNames.PayloadFormat, payloadFormat)
+  .Debug(" [Payload]: {Payload:l}", formatted)`. `LoggingPropertyNames` (`Payload`,
+  `PayloadFormat`) and the `PayloadFormat` enum (`Text`/`Json`/`Xml`) together form a public
+  contract — documented as such on `LoggingPropertyNames`'s own XML doc — that any custom Serilog
+  formatter, in-process or in a separate package, can read instead of re-parsing content types.
+  `src/Zyga.SeriRestClient.Spectre/RestClientSpectreFormatter.cs` is the reference consumer: it
+  reads both properties off the `LogEvent`, and syntax-highlights the payload when
+  `PayloadFormat.Json`, falling back to the plain formatter otherwise.
 
 ## CI/CD (`.github/workflows/`)
 

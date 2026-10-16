@@ -39,14 +39,10 @@ builder.Host.UseSerilog((context, configuration) =>
     configuration.ReadFrom.Configuration(context.Configuration));
 
 // Register the client with a keyed service
-builder.Services.AddSeriRestClient(
-    "MyApi",
-    (sp, key) => new RestClientOptions("https://api.example.com")
-    {
-        ThrowOnAnyError = false,
-        Timeout = TimeSpan.FromSeconds(30)
-    }
-);
+builder.Services.AddSeriRestClient("MyApi")
+    .WithBaseUrl("https://api.example.com")
+    .WithTimeout(TimeSpan.FromSeconds(30))
+    .Configure((sp, key, options) => options.ThrowOnAnyError = false);
 ```
 
 ### 2. Inject and Use
@@ -105,18 +101,41 @@ Example log output:
 [DBG] REQUEST -> RESPONSE: 00:00:01.2345678
 ```
 
+## Pretty console output (Spectre)
+
+For local development, the companion package `Zyga.SeriRestClient.Spectre` syntax-highlights
+JSON payloads in the console using [Spectre.Console](https://spectreconsole.net/). It's
+entirely optional — the core package has no dependency on it, and log output to files, Seq,
+or Elasticsearch is completely unaffected.
+
+```bash
+dotnet add package Zyga.SeriRestClient.Spectre
+dotnet add package Serilog.Sinks.Console
+```
+
+`Serilog.Sinks.Console` provides the `.WriteTo.Console(...)` sink method used below; add it if the
+consuming application doesn't already reference it.
+
+```csharp
+using Zyga.SeriRestClient.Spectre;
+
+Log.Logger = new LoggerConfiguration()
+    .WriteTo.Console(formatter: new RestClientSpectreFormatter())
+    .CreateLogger();
+```
+
+Everything except JSON payloads (REQUEST/RESPONSE lines, cookies, XML/text payloads) renders
+exactly like a plain Serilog console formatter. XML payloads are not syntax-highlighted — no
+vetted Spectre (or other) library exists for XML highlighting yet.
+
 ## Multiple REST Clients
 
 Register multiple clients with different configurations:
 
 ```csharp
-services.AddSeriRestClient(
-    "UsersApi",
-    (sp, key) => new RestClientOptions("https://users.api.example.com"));
+services.AddSeriRestClient("UsersApi").WithBaseUrl("https://users.api.example.com");
 
-services.AddSeriRestClient(
-    "OrdersApi",
-    (sp, key) => new RestClientOptions("https://orders.api.example.com"));
+services.AddSeriRestClient("OrdersApi").WithBaseUrl("https://orders.api.example.com");
 
 // Inject specific clients
 public MyService(

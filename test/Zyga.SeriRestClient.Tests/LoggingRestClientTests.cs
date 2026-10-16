@@ -162,4 +162,56 @@ public class LoggingRestClientTests
             Assert.Contains(sink.Messages, m => m.StartsWith(" [Payload]: {") && m.Contains("\n"));
         }
     }
+
+    [Fact]
+    public void Json_response_payload_is_tagged_with_PayloadFormat_Json()
+    {
+        var (client, sink, scope) = Harness.Client(HttpStatusCode.OK, Json, "application/json");
+        using (scope)
+        {
+            client.LogRequest<object>(new RestRequest("users"), Method.Get);
+
+            var payloadEvent = Assert.Single(sink.Events, e => e.Properties.ContainsKey(LoggingPropertyNames.Payload));
+
+            var format = Assert.IsType<ScalarValue>(payloadEvent.Properties[LoggingPropertyNames.PayloadFormat]);
+            Assert.Equal(PayloadFormat.Json, format.Value);
+
+            var payload = Assert.IsType<ScalarValue>(payloadEvent.Properties[LoggingPropertyNames.Payload]);
+            Assert.Contains("\n", Assert.IsType<string>(payload.Value));
+        }
+    }
+
+    [Fact]
+    public void Xml_response_payload_is_tagged_with_PayloadFormat_Xml()
+    {
+        var (client, sink, scope) = Harness.Client(HttpStatusCode.OK, Xml, "application/xml");
+        using (scope)
+        {
+            client.LogRequest<object>(new RestRequest("users"), Method.Get);
+
+            var payloadEvent = Assert.Single(sink.Events, e => e.Properties.ContainsKey(LoggingPropertyNames.Payload));
+
+            var format = Assert.IsType<ScalarValue>(payloadEvent.Properties[LoggingPropertyNames.PayloadFormat]);
+            Assert.Equal(PayloadFormat.Xml, format.Value);
+        }
+    }
+
+    [Fact]
+    public void Json_request_payload_is_tagged_with_PayloadFormat_Json()
+    {
+        var (client, sink, scope) = Harness.Client(HttpStatusCode.OK, Json, "application/json");
+        using (scope)
+        {
+            var request = new RestRequest("users");
+            request.AddJsonBody(new { id = 1, name = "ada" });
+
+            client.LogRequest<object>(request, Method.Post);
+
+            var payloadEvents = sink.Events.Where(e => e.Properties.ContainsKey(LoggingPropertyNames.Payload)).ToList();
+            Assert.Equal(2, payloadEvents.Count); // request body + response body
+
+            var requestFormat = Assert.IsType<ScalarValue>(payloadEvents[0].Properties[LoggingPropertyNames.PayloadFormat]);
+            Assert.Equal(PayloadFormat.Json, requestFormat.Value);
+        }
+    }
 }

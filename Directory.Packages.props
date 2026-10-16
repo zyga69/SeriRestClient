@@ -14,6 +14,7 @@
     <PackageVersion Include="Newtonsoft.Json" Version="13.0.4" />
     <PackageVersion Include="RestSharp" Version="114.0.0" />
     <PackageVersion Include="Serilog" Version="4.4.0" />
+    <PackageVersion Include="Spectre.Console.Json" Version="0.57.2" />
   </ItemGroup>
 
   <ItemGroup Label="Test">
