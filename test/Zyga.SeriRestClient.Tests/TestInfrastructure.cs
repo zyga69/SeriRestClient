@@ -49,8 +49,9 @@ internal static class Harness
 
         var services = new ServiceCollection();
         services.AddSingleton<Serilog.ILogger>(logger);
-        services.AddSeriRestClient(Key, (_, _) =>
-            new RestClientOptions(baseUrl) { ConfigureMessageHandler = _ => handler });
+        services.AddSeriRestClient(Key)
+            .WithBaseUrl(baseUrl)
+            .Configure((_, _, options) => options.ConfigureMessageHandler = _ => handler);
 
         return (services.BuildServiceProvider(), sink);
     }

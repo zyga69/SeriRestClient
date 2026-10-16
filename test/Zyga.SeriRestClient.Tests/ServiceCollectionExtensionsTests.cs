@@ -49,10 +49,12 @@ public class ServiceCollectionExtensionsTests
         var handler = new StubHandler(HttpStatusCode.OK, "{}", "application/json");
         var services = new ServiceCollection();
         services.AddSingleton<Serilog.ILogger>(new Serilog.LoggerConfiguration().CreateLogger());
-        services.AddSeriRestClient("users", (_, _) =>
-            new RestClientOptions("https://users.test") { ConfigureMessageHandler = _ => handler });
-        services.AddSeriRestClient("orders", (_, _) =>
-            new RestClientOptions("https://orders.test") { ConfigureMessageHandler = _ => handler });
+        services.AddSeriRestClient("users")
+            .WithBaseUrl("https://users.test")
+            .Configure((_, _, options) => options.ConfigureMessageHandler = _ => handler);
+        services.AddSeriRestClient("orders")
+            .WithBaseUrl("https://orders.test")
+            .Configure((_, _, options) => options.ConfigureMessageHandler = _ => handler);
 
         using var provider = services.BuildServiceProvider();
         using var scope = provider.CreateScope();
@@ -68,12 +70,27 @@ public class ServiceCollectionExtensionsTests
     public void Resolution_fails_when_no_non_keyed_serilog_logger_is_registered()
     {
         var services = new ServiceCollection();
-        services.AddSeriRestClient(Harness.Key, (_, _) => new RestClientOptions(Harness.BaseUrl));
+        services.AddSeriRestClient(Harness.Key).WithBaseUrl(Harness.BaseUrl);
 
         using var provider = services.BuildServiceProvider();
         using var scope = provider.CreateScope();
 
         Assert.Throws<InvalidOperationException>(
             () => scope.ServiceProvider.GetRequiredKeyedService<ILoggingRestClient>(Harness.Key));
+    }
+
+    [Fact]
+    public void Builder_applies_WithTimeout()
+    {
+        var services = new ServiceCollection();
+        services.AddSingleton<Serilog.ILogger>(new Serilog.LoggerConfiguration().CreateLogger());
+        services.AddSeriRestClient(Harness.Key)
+            .WithBaseUrl(Harness.BaseUrl)
+            .WithTimeout(TimeSpan.FromSeconds(42));
+
+        using var provider = services.BuildServiceProvider();
+        var options = provider.GetRequiredKeyedService<RestClientOptions>(Harness.Key);
+
+        Assert.Equal(TimeSpan.FromSeconds(42), options.Timeout);
     }
 }

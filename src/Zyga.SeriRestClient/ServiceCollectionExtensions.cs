@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection;
 using RestSharp;
 using ILogger = Serilog.ILogger;
 
@@ -11,50 +11,42 @@ public static class ServiceCollectionExtensions
 {
     /// <summary>
     /// Registers <see cref="ILoggingRestClient"/> and <see cref="LoggingRestClient"/> as keyed services
-    /// in the dependency injection container.
+    /// in the dependency injection container, and returns a builder for configuring the client's
+    /// <see cref="RestClientOptions"/>.
     /// </summary>
     /// <param name="services">The <see cref="IServiceCollection"/> to add services to.</param>
     /// <param name="key">The service key used to identify this specific REST client instance.
     /// This allows multiple REST clients to be registered with different configurations.</param>
-    /// <param name="implementationFactory">A factory function that creates <see cref="RestClientOptions"/>
-    /// for configuring the REST client. Receives the service provider and key as parameters.</param>
-    /// <returns>The <see cref="IServiceCollection"/> for method chaining.</returns>
+    /// <returns>A builder for configuring this client's <see cref="RestClientOptions"/>.</returns>
     /// <remarks>
     /// This method registers the REST client options as a keyed singleton and the client itself as a keyed scoped service.
     /// The keyed service pattern enables multiple REST clients with different configurations in the same application.
     /// </remarks>
     /// <example>
     /// <code>
-    /// services.AddSeriRestClient(
-    ///     "MyApi",
-    ///     (sp, key) => new RestClientOptions("https://api.example.com")
-    ///     {
-    ///         ThrowOnAnyError = true,
-    ///         Timeout = TimeSpan.FromSeconds(30)
-    ///     }
-    /// );
+    /// services.AddSeriRestClient("MyApi")
+    ///     .WithBaseUrl("https://api.example.com")
+    ///     .WithTimeout(TimeSpan.FromSeconds(30));
     ///
     /// // Then inject with:
     /// // [FromKeyedServices("MyApi")] ILoggingRestClient client
     /// </code>
     /// </example>
-    public static IServiceCollection AddSeriRestClient(this IServiceCollection services,
-           object? key,
-           Func<IServiceProvider, object?, RestClientOptions> implementationFactory)
+    public static ISeriRestClientBuilder AddSeriRestClient(this IServiceCollection services, object? key)
     {
-        return services
-            .AddKeyedSingleton<RestClientOptions>(key, implementationFactory)
+        var builder = new SeriRestClientBuilder(services);
+
+        services
+            .AddKeyedSingleton<RestClientOptions>(key, (sp, serviceKey) => builder.Build(sp, serviceKey))
             .AddKeyedScoped<ILoggingRestClient>(key, (sp, serviceKey) =>
-
                 new LoggingRestClient(
                     sp.GetRequiredKeyedService<RestClientOptions>(key),
-                    sp.GetRequiredService<ILogger>())
-            )
+                    sp.GetRequiredService<ILogger>()))
             .AddKeyedScoped(key, (sp, serviceKey) =>
-
                 new LoggingRestClient(
                     sp.GetRequiredKeyedService<RestClientOptions>(key),
-                    sp.GetRequiredService<ILogger>())
-            );
+                    sp.GetRequiredService<ILogger>()));
+
+        return builder;
     }
 }

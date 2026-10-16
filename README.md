@@ -39,14 +39,10 @@ builder.Host.UseSerilog((context, configuration) =>
     configuration.ReadFrom.Configuration(context.Configuration));
 
 // Register the client with a keyed service
-builder.Services.AddSeriRestClient(
-    "MyApi",
-    (sp, key) => new RestClientOptions("https://api.example.com")
-    {
-        ThrowOnAnyError = false,
-        Timeout = TimeSpan.FromSeconds(30)
-    }
-);
+builder.Services.AddSeriRestClient("MyApi")
+    .WithBaseUrl("https://api.example.com")
+    .WithTimeout(TimeSpan.FromSeconds(30))
+    .Configure((sp, key, options) => options.ThrowOnAnyError = false);
 ```
 
 ### 2. Inject and Use
@@ -110,13 +106,9 @@ Example log output:
 Register multiple clients with different configurations:
 
 ```csharp
-services.AddSeriRestClient(
-    "UsersApi",
-    (sp, key) => new RestClientOptions("https://users.api.example.com"));
+services.AddSeriRestClient("UsersApi").WithBaseUrl("https://users.api.example.com");
 
-services.AddSeriRestClient(
-    "OrdersApi",
-    (sp, key) => new RestClientOptions("https://orders.api.example.com"));
+services.AddSeriRestClient("OrdersApi").WithBaseUrl("https://orders.api.example.com");
 
 // Inject specific clients
 public MyService(
