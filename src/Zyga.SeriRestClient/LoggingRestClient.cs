@@ -94,20 +94,30 @@ public class LoggingRestClient : RestClient, ILoggingRestClient
         if (string.IsNullOrWhiteSpace(content)) return;
 
         string formatted = string.Empty;
+        PayloadFormat payloadFormat;
 
         if (string.IsNullOrWhiteSpace(contentType)) formatted = content;
 
         switch (contentType)
         {
             case MediaTypeNames.Application.Xml:
-                formatted = PrettyXml(content); break;
+                formatted = PrettyXml(content);
+                payloadFormat = PayloadFormat.Xml;
+                break;
 
             case MediaTypeNames.Application.Json:
-                formatted = PrettyJson(content); break;
-            default: formatted = content; break;
+                formatted = PrettyJson(content);
+                payloadFormat = PayloadFormat.Json;
+                break;
+
+            default:
+                formatted = content;
+                payloadFormat = PayloadFormat.Text;
+                break;
         }
 
-        logger.Debug($" [Payload]: {formatted}");
+        logger.ForContext(LoggingPropertyNames.PayloadFormat, payloadFormat)
+              .Debug(" [Payload]: {Payload:l}", formatted);
     }
 
     private void LogRequestBody(object? data, DataFormat format)
@@ -116,20 +126,28 @@ public class LoggingRestClient : RestClient, ILoggingRestClient
             return;
 
         string formatted = string.Empty;
+        PayloadFormat payloadFormat;
 
         switch (format)
         {
             case DataFormat.Json:
-                formatted = JsonConvert.SerializeObject(data, Newtonsoft.Json.Formatting.Indented); break;
+                formatted = JsonConvert.SerializeObject(data, Newtonsoft.Json.Formatting.Indented);
+                payloadFormat = PayloadFormat.Json;
+                break;
 
             case DataFormat.Xml:
-                formatted = GetXml(data); break;
+                formatted = GetXml(data);
+                payloadFormat = PayloadFormat.Xml;
+                break;
 
             default:
-                formatted = data.ToString() ?? string.Empty; break;
+                formatted = data.ToString() ?? string.Empty;
+                payloadFormat = PayloadFormat.Text;
+                break;
         }
 
-        logger.Debug($" [Payload]: {formatted}");
+        logger.ForContext(LoggingPropertyNames.PayloadFormat, payloadFormat)
+              .Debug(" [Payload]: {Payload:l}", formatted);
     }
 
     private void LogCookies(CookieCollection? collection)
