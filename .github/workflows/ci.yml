@@ -23,7 +23,7 @@ jobs:
       pull-requests: write   # coverage comment
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0     # MinVer needs full history and tags
 
@@ -70,7 +70,7 @@ jobs:
       # several target frameworks sharing one TestResults/, a fixed name is overwritten
       # rather than merged, and you silently report one framework's results.
       - name: Publish test results
-        uses: dorny/test-reporter@v1
+        uses: dorny/test-reporter@v3
         if: always() && matrix.os == 'ubuntu-latest'
         with:
           name: Test results
@@ -84,8 +84,9 @@ jobs:
       # miss is silent, so the badge simply never populates.
       - name: Upload coverage
         if: matrix.os == 'ubuntu-latest'
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@v7
         with:
+          token: ${{ secrets.CODECOV_TOKEN }}
           files: ./TestResults/*.cobertura.xml
           fail_ci_if_error: false
 
@@ -93,7 +94,7 @@ jobs:
     name: Verify packaging
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
