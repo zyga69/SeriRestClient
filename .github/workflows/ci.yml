@@ -84,7 +84,7 @@ jobs:
       # miss is silent, so the badge simply never populates.
       - name: Upload coverage
         if: matrix.os == 'ubuntu-latest'
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@v7
         with:
           files: ./TestResults/*.cobertura.xml
           fail_ci_if_error: false
