@@ -21,6 +21,8 @@ public static class ServiceCollectionExtensions
     /// <remarks>
     /// This method registers the REST client options as a keyed singleton and the client itself as a keyed scoped service.
     /// The keyed service pattern enables multiple REST clients with different configurations in the same application.
+    /// Calling <c>WithBaseUrl</c> on the returned builder is not enforced: if it is never called, the resulting
+    /// <see cref="RestClientOptions"/> is built with a null <see cref="RestClientOptions.BaseUrl"/>.
     /// </remarks>
     /// <example>
     /// <code>

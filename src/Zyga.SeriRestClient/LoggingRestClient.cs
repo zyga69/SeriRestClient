@@ -96,8 +96,6 @@ public class LoggingRestClient : RestClient, ILoggingRestClient
         string formatted = string.Empty;
         PayloadFormat payloadFormat;
 
-        if (string.IsNullOrWhiteSpace(contentType)) formatted = content;
-
         switch (contentType)
         {
             case MediaTypeNames.Application.Xml:

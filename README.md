@@ -110,7 +110,11 @@ or Elasticsearch is completely unaffected.
 
 ```bash
 dotnet add package Zyga.SeriRestClient.Spectre
+dotnet add package Serilog.Sinks.Console
 ```
+
+`Serilog.Sinks.Console` provides the `.WriteTo.Console(...)` sink method used below; add it if the
+consuming application doesn't already reference it.
 
 ```csharp
 using Zyga.SeriRestClient.Spectre;
