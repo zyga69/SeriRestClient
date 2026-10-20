@@ -214,4 +214,62 @@ public class LoggingRestClientTests
             Assert.Equal(PayloadFormat.Json, requestFormat.Value);
         }
     }
+
+    // Regression test: a response labeled Content-Type: application/xml but carrying a body
+    // that is NOT well-formed XML (an error page from a proxy, a truncated body, a device
+    // returning plain text under the wrong content-type) must not crash the request. Logging
+    // is a side effect of LogRequest<T> and must never be able to change whether a request
+    // completes.
+    // Note: these assert IsSuccessStatusCode (the real HTTP status was 2xx), not
+    // IsSuccessful — RestSharp's IsSuccessful also factors in whether the body could be
+    // deserialized into TResponse, which a malformed body legitimately fails regardless of
+    // this fix (confirmed empirically). What this fix guarantees is that LogRequest<T>
+    // returns a RestResponse at all, with the real HTTP status, instead of throwing.
+    [Fact]
+    public void Malformed_xml_response_does_not_crash_the_request()
+    {
+        var (client, sink, scope) = Harness.Client(HttpStatusCode.OK, "not valid xml <<<", "application/xml");
+        using (scope)
+        {
+            var response = client.LogRequest<object>(new RestRequest("users"), Method.Get);
+
+            Assert.True(response.IsSuccessStatusCode);
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+            var payload = Assert.Single(sink.Messages, m => m.StartsWith(" [Payload]: "));
+            Assert.Equal(" [Payload]: not valid xml <<<", payload);
+        }
+    }
+
+    // Same bug class as above, via JsonConvert.DeserializeObject in PrettyJson.
+    [Fact]
+    public void Malformed_json_response_does_not_crash_the_request()
+    {
+        var (client, sink, scope) = Harness.Client(HttpStatusCode.OK, "not valid json {{{", "application/json");
+        using (scope)
+        {
+            var response = client.LogRequest<object>(new RestRequest("users"), Method.Get);
+
+            Assert.True(response.IsSuccessStatusCode);
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+            var payload = Assert.Single(sink.Messages, m => m.StartsWith(" [Payload]: "));
+            Assert.Equal(" [Payload]: not valid json {{{", payload);
+        }
+    }
+
+    // A non-2xx response with a malformed body must also not crash — IsSuccessful should
+    // reflect the real HTTP status, not an exception escaping LogRequest<T>.
+    [Fact]
+    public void Malformed_xml_response_on_an_error_status_still_returns_the_real_status()
+    {
+        var (client, sink, scope) = Harness.Client(HttpStatusCode.BadGateway, "<html>502 Bad Gateway</html", "application/xml");
+        using (scope)
+        {
+            var response = client.LogRequest<object>(new RestRequest("users"), Method.Get);
+
+            Assert.False(response.IsSuccessful);
+            Assert.Equal(HttpStatusCode.BadGateway, response.StatusCode);
+        }
+    }
 }

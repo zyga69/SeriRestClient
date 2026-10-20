@@ -93,25 +93,38 @@ public class LoggingRestClient : RestClient, ILoggingRestClient
     {
         if (string.IsNullOrWhiteSpace(content)) return;
 
-        string formatted = string.Empty;
+        string formatted;
         PayloadFormat payloadFormat;
 
-        switch (contentType)
+        try
         {
-            case MediaTypeNames.Application.Xml:
-                formatted = PrettyXml(content);
-                payloadFormat = PayloadFormat.Xml;
-                break;
+            switch (contentType)
+            {
+                case MediaTypeNames.Application.Xml:
+                    formatted = PrettyXml(content);
+                    payloadFormat = PayloadFormat.Xml;
+                    break;
 
-            case MediaTypeNames.Application.Json:
-                formatted = PrettyJson(content);
-                payloadFormat = PayloadFormat.Json;
-                break;
+                case MediaTypeNames.Application.Json:
+                    formatted = PrettyJson(content);
+                    payloadFormat = PayloadFormat.Json;
+                    break;
 
-            default:
-                formatted = content;
-                payloadFormat = PayloadFormat.Text;
-                break;
+                default:
+                    formatted = content;
+                    payloadFormat = PayloadFormat.Text;
+                    break;
+            }
+        }
+        catch (Exception)
+        {
+            // The body didn't match its declared Content-Type (a proxy error page, a
+            // truncated response, a device mislabeling plain text as XML/JSON — all
+            // plausible in the field). Logging must never be able to change whether a
+            // request/response completes, so fall back to the raw content instead of
+            // letting the parse failure propagate out of LogRequest<T>.
+            formatted = content;
+            payloadFormat = PayloadFormat.Text;
         }
 
         logger.ForContext(LoggingPropertyNames.PayloadFormat, payloadFormat)
